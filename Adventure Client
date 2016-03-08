@@ -1,0 +1,772 @@
+currentWindow = "Adventure Client"
+gWidth = 690
+gHeight = 690
+mainScreenSize = 512
+'picks animate speed for player movement, number from 1 -1000
+moveSpeed = 7
+runSpeed = 1
+maxRunSpeed = 2
+timeSpeed = 140
+Timer.Interval = timeSpeed
+cellSize = (mainScreenSize/16)
+mapStartingX = (gWidth-mainScreenSize)/2
+mapStartingY = mainScreenSize+51
+dndLocation = "C:\Users\Richard\Documents\Paracosmic\Saved Games\Draco"
+GraphicsWindow.Height = gHeight
+GraphicsWindow.Width = gWidth
+GraphicsWindow.MouseDown = onMouseDown
+GraphicsWindow.MouseUp = onMouseUp
+GraphicsWindow.KeyDown = onKeyDown
+GraphicsWindow.KeyUp = onKeyUp
+GraphicsWindow.MouseMove = onMouseMove
+Controls.ButtonClicked = buttonPressed
+mapTool = "none"
+justmoved = "false"
+'main screen is the primary camera view of players on maps in the adventure screen
+
+GraphicsWindow.BackgroundColor = "black"
+'GraphicsWindow.CanResize = "false"
+GraphicsWindow.FontSize = 7 
+'Sets a single number to each square of the 16x16 grid
+k = 0
+For column = 1 To 16
+For row = 1 To 16
+  k = k + 1
+  tileID[column][row] = k
+  columnID[k] = column
+  rowID[k] = row
+  EndFor
+endfor
+
+'Loads images into memory so program runs quicker,
+numberOfImages = File.ReadLine(dndLocation + "\Art\info.txt",1)
+For z = 1 To numberOfImages
+  artInfoLine[z] = File.ReadLine(dndLocation + "\Art\info.txt",z+1)
+  lineLength = Text.GetLength(artInfoLine[z])-4
+  imageName[z] = Text.GetSubText(artInfoLine[z],5,lineLength)
+  imageID[imageName[z]] = z
+  'TextWindow.WriteLine(imageName[z])
+  Image[imageName[z]] = ImageList.LoadImage(dndLocation + "\Art\"+imageName[z]+".png")
+EndFor
+
+'Finds X positions, Y positions, Right bounds, and Bottom bounds for each cell. 
+For column = 1 To 16
+  For row = 1 To 16
+
+    xpos[column][row] = mapStartingX+((column-1)*cellSize)+6
+    ypos[column][row] = mapStartingY-((row)*cellSize+1)
+    rightBound[column][row] = xpos[column][row] + cellSize
+    bottomBound[column][row] = ypos[column][row] + cellSize
+
+  EndFor
+EndFor
+
+loading = "true"
+drawHud()
+loadPlayerData()
+clearMap()
+loadMap()
+drawMap()
+spawnPlayer()
+loading = "false"
+
+loadMapFiles()
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+
+
+Sub onMouseDown
+  mouseInteract1 = "false"
+  'getMousePos()
+  If loading = "false" then
+    If Mouse.IsRightButtonDown Then
+      rightmouseIsDown = "true"
+    EndIf
+    If Mouse.IsleftButtonDown Then
+      leftmouseIsDown = "true"
+      mouseInteract1 = "true"
+    EndIf
+  EndIf
+EndSub
+
+Sub onMouseMove
+
+EndSub
+
+Sub getMousePos
+  mX = math.Round(GraphicsWindow.MouseX)
+  mY = math.Round(GraphicsWindow.MouseY)
+  'Finds which cell the mouse is in
+  For column = 1 To 16 
+    For row = 1 To 16
+      If mX > xpos[column][row] And mX < rightBound[column][row] Then
+        mColumn = column
+      EndIf
+      If mY > ypos[column][row] And mY < bottomBound[column][row] Then
+        mRow = row
+      EndIf
+    EndFor
+  EndFor
+EndSub
+
+Sub playMouseClick
+  i = i + 2
+    Shapes.HideShape(mouseSelector)
+    mouseSelector = Shapes.AddImage(Image[("move selection "+i)])
+    Shapes.Move(mouseSelector,xpos[mColumn][mRow],ypos[mColumn][mRow])
+    Program.Delay(80)
+    If i > 7 Then
+      Shapes.HideShape(mouseSelector)
+      i=0
+    EndIf
+
+EndSub
+
+
+  
+
+
+sub onMouseUp
+  If Mouse.IsRightButtonDown Then
+    Else
+      rightmouseIsDown = "false"
+  EndIf
+  If Mouse.IsLeftButtonDown Then
+  Else
+      mouseInteract2 = "true"
+      leftmouseIsDown = "false"
+  EndIf
+  Shapes.HideShape(mouseSelector)
+  '(Math.Round(Math.SquareRoot(domainSize*domainSize+rangeSize*rangeSize))
+  If mouseInteract2 = "true" And mouseInteract1 = "true" Then
+    interact()
+  Else
+    mouseInteract1 = "false" 
+    mouseInteract2 = "false"
+  EndIf
+  
+EndSub
+
+
+      
+  Sub buttonPressed
+    If Controls.LastClickedButton = saveButton then
+      Timer.Pause()
+      holdMapData()
+      savePlayerData()
+      saveAllMaps()
+      Timer.Resume()
+    EndIf
+    
+    If Controls.LastClickedButton = scrubButton Then
+      loading = "true"
+      Timer.Pause()
+      holdMapData()
+      clearMap()
+      GraphicsWindow.Clear()
+      drawHud()
+      drawMap()
+      respawnPlayer()
+      loading = "false"
+      Timer.Resume()
+    EndIf
+    
+  EndSub
+  
+  Sub onKeyDown
+    If loading = "false" then
+    If keyIsDown = "false" then
+        If GraphicsWindow.LastKey = "J" Then
+          interact()
+        EndIf
+        If GraphicsWindow.LastKey = "N" Then
+          runSpeed = maxRunSpeed
+        EndIf 
+        onTick()
+      EndIf
+      
+      keyIsDown = "true"
+      EndIf
+      EndSub
+  '=====================================================================================================       
+ '=====================================================================================================
+ '=====================================================================================================
+ '=====================================================================================================
+ '=====================================================================================================
+ mainLoop:
+ 
+timer.Tick = onTick
+
+Sub onTick
+  playerMovement()
+  updateHud()   
+  getMousePos()  
+endsub
+      
+ '=====================================================================================================       
+ '=====================================================================================================
+ '=====================================================================================================
+ '=====================================================================================================
+ '=====================================================================================================
+ Sub updateMapList
+  
+ EndSub
+ 
+ 
+ 
+ 
+ 
+ Sub drawHud
+   hudXstart = 2
+   hudYstart = 60
+   adventureScreenBackground = dndLocation + "\Art\Adventure Screen Background.png"
+   GraphicsWindow.DrawImage(adventureScreenBackground,0,0)
+   GraphicsWindow.FontSize = 9
+   
+   GraphicsWindow.BrushColor = "black"
+   Controls.HideControl(saveButton)
+   Controls.HideControl(exitButton)
+   saveButton = Controls.AddButton("Save",gWidth-65,50)
+   exitButton = Controls.AddButton("Exit",gWidth-65,80)
+   scrubButton = Controls.AddButton("Scrub",gWidth-65,110)
+   Controls.SetSize(saveButton,38,30)
+   Controls.SetSize(exitButton,38,30)
+   Controls.SetSize(scrubButton,38,30)
+   
+   GraphicsWindow.BrushColor = "white"
+   Shapes.HideShape(timeShape)
+   timeShape = Shapes.AddText(timeText)
+   Shapes.Move(timeShape,623,20)
+   Shapes.HideShape(dateShape)
+   dateShape = Shapes.AddText(dateText)
+   Shapes.Move(dateShape,623,10)
+   
+   Controls.HideControl(textConsole)
+   GraphicsWindow.BrushColor = "black"
+   textConsole = Controls.AddMultiLineTextBox(mapStartingX,mapStartingY+40)
+   Controls.SetSize(textConsole,mainScreenSize,80)
+ EndSub
+ 
+ Sub updateHud
+   'Draws Black Rectangle for HUD details to sit on
+   
+  
+   'Manages game clock
+   gameSecond = gameSecond+6
+   If gameSecond > 59 Then
+     gameSecond = 0 
+     gameMinute = gameMinute+1
+   EndIf
+   If gameMinute > 59 Then
+     gameMinute = 0
+     gameHour = gameHour+1
+   EndIf
+   If gameHour > 23 Then
+     gameHour = 0
+     gameDay = gameDay+1
+   EndIf
+   If gameDay > 30 Then
+     gameDay = 1
+     gameMonth = 0
+   EndIf
+   If gameMonth > 12 Then
+     gameMonth = 1
+     gameYear = gameYear+1
+   EndIf
+
+   dateText = "Date: "+gameMonth+"/"+gameDay+"/"+gameYear
+   timeText = "Time: "+gameHour+":"+gameMinute
+   If  gameHour < 10 and gameMinute < 10  Then
+     timeText = "Time: 0"+gameHour+":0"+gameMinute
+   EndIf  
+   If  gameHour < 10 And gameMinute > 9 then
+     timeText = "Time: 0"+gameHour+":"+gameMinute
+   EndIf
+   If  gameHour > 9 And gameMinute < 10 then
+     timeText = "Time: "+gameHour+":0"+gameMinute
+   EndIf
+   Shapes.SetText(dateShape,dateText)
+   Shapes.SetText(timeShape,timeText)
+   EndSub
+ 
+ Sub playerMovement
+   If loading = "false" then
+   'Mouse Movement
+   '---------------------------------------------------------------------------
+   if rightmouseIsDown = "true" then
+     playMouseClick()
+   If playerColumn>mColumn Then
+     checkPlayerCollision()
+          If leftCollision = "false" Then
+            playerColumn = playerColumn - 1
+            movePlayer()
+          EndIf
+        EndIf
+        '---------------------------------------------------------------------------
+   If playerColumn<mColumn Then
+     checkPlayerCollision()
+          If rightCollision = "false" Then
+            playerColumn = playerColumn + 1
+            movePlayer()
+          EndIf
+        EndIf
+        '---------------------------------------------------------------------------
+   If playerRow>mRow Then
+     checkPlayerCollision()
+          If bottomCollision = "false" Then
+            playerRow = playerRow - 1
+            movePlayer()
+          EndIf
+        EndIf
+        '---------------------------------------------------------------------------
+   If playerRow<mRow Then
+     checkPlayerCollision()
+          If topCollision = "false" Then
+            playerRow = playerRow + 1
+            movePlayer()
+          EndIf
+   EndIf
+   EndIf     
+   
+      If keyIsDown = "true"  then
+        'moves player in up direction as many times as their runspeed is set
+        If GraphicsWindow.LastKey = "W" Then
+        For y = 1 To runSpeed
+          checkPlayerCollision()
+          If topCollision = "false" Then
+            playerRow = playerRow + 1
+            movePlayer()
+          EndIf
+        EndFor
+      EndIf
+      'moves player in down direction as many times as their runspeed is set
+        If GraphicsWindow.LastKey = "S" Then
+        For y = 1 To runSpeed
+          checkPlayerCollision()
+          If bottomCollision = "false" Then
+            playerRow = playerRow - 1
+            movePlayer()
+          EndIf
+        EndFor
+      EndIf
+      'moves player in right direction as many times as their runspeed is set
+        If GraphicsWindow.LastKey = "D" Then
+        For y = 1 To runSpeed
+          checkPlayerCollision()
+          If rightCollision = "false" Then
+            playerColumn = playerColumn + 1
+            movePlayer()
+          EndIf
+        EndFor
+      EndIf
+      'moves player in left direction as many times as their runspeed is set
+        If GraphicsWindow.LastKey = "A" Then
+        For y = 1 To runSpeed
+          checkPlayerCollision()
+          If leftCollision = "false" Then
+            playerColumn = playerColumn - 1
+            movePlayer()
+          EndIf
+        EndFor
+        EndIf
+      
+          
+        endif
+        
+   EndIf
+ EndSub
+ 
+ 
+ Sub interact
+   If loading = "false" then
+      holdMapData()
+  'TextWindow.WriteLine("Action!")
+  Timer.Pause()
+  If Text.IsSubText(gridName[playerColumn][playerRow],"portal") And justmoved = "false" And loading = "false" Then
+    'Checks all the portal info files for the coordinates where the player is standing
+    For xz = 1 To numberOfPortals
+      If Region = portalRegion[xz] And Area = portalArea[xz] And Location = portalLocation[xz] And Map = portalMap[xz] And playerColumn = portalColumn[xz] And playerRow = portalRow[xz] Then
+        'Checks the portal the player is on with all other portals for the send location, then loads those coordinates and loads that map/spawns the player there
+        'TextWindow.WriteLine("found portal "+portalNumber[xz]+", looking for portal "+portalSendID[xz])
+        For zy = 1 To numberOfPortals
+          If portalSendID[xz] = portalNumber[zy] And justmoved = "false" Then
+            Region = portalRegion[zy]
+            Area = portalArea[zy]
+            Location = portalLocation[zy]
+            Map = portalMap[zy]
+            playerColumn = portalColumn[zy]
+            playerRow = portalRow[zy]
+            loading = "true"
+            despawnPlayer()
+            clearMap()
+            loadMap()
+            drawMap()
+            respawnPlayer()
+            justmoved = "true"
+            loading = "false"
+            EndIf
+          EndFor
+        EndIf
+      EndFor
+    EndIf
+    justmoved = "false"
+    
+    
+    
+   Timer.Resume()
+    EndIf
+   'after interacting and possibly changing the map, hold the map data in the mapTiles arrray
+
+EndSub
+
+
+
+Sub onKeyUp
+  If GraphicsWindow.LastKey = "N" Then
+    runSpeed = 1
+  EndIf
+  keyIsDown = "false"
+EndSub
+
+    
+    Sub checkPlayerCollision
+      'Reads through the collision list file in settings to see if blocks can be walked through or not
+      numberOfCollisionTiles = File.ReadLine(dndLocation + "\settings\collision list.txt",1)
+      For z = 1 To numberOfCollisionTiles
+        collisionInfoLine[z] = File.ReadLine(dndLocation + "\settings\collision list.txt",z+1)
+        lineLength = Text.GetLength(collisionInfoLine[z])-4
+        collisionName[z] = Text.GetSubTextToEnd(collisionInfoLine[z],5)
+        'TextWindow.WriteLine(imageName[z])
+      EndFor
+      topCollision = "false"
+      bottomCollision = "false"
+      rightCollision = "false"
+      leftCollision = "false"
+      'Checks tile on map with all tiles in the collision list
+      For x = 1 To numberOfCollisionTiles
+        'TextWindow.WriteLine(collisionName[x])
+        'TextWindow.WriteLine(gridName[playerColumn][playerRow+1]+","+gridName[playerColumn][playerRow-1]+","+gridName[playerColumn-1][playerRow]+","+gridName[playerColumn+1][playerRow])
+        If gridName[playerColumn][playerRow+1] = collisionName[x] Or (playerRow+1) = 17 then
+          topCollision = "true"
+        EndIf
+        If gridName[playerColumn][playerRow-1] = collisionName[x] Or (playerRow-1) = 0 then
+          bottomCollision = "true"
+        EndIf
+        If gridName[playerColumn-1][playerRow] = collisionName[x] Or (playerColumn-1) = 0 then
+          leftCollision = "true"
+        EndIf
+        If gridName[playerColumn+1][playerRow] = collisionName[x] Or (playerColumn+1) = 17 then
+          rightCollision = "true"
+        EndIf
+    EndFor
+  EndSub
+  
+    sub movePlayer
+      If moveSpeed < 1000 Then
+      Shapes.Animate(Player,xpos[playerColumn][playerRow],ypos[playerColumn][playerRow]-16,(1000/moveSpeed))
+    Else
+      Shapes.Move(Player,xpos[playerColumn][playerRow],ypos[playerColumn][playerRow]-16)
+      EndIf
+    EndSub
+    
+  
+  Sub loadMap
+    fileName = dndLocation+"\World\"+Region+"\"+Area+"\"+Location+"\"+Map+"\info.txt"
+    'TextWindow.WriteLine(fileName)
+    For column = 1 To 16
+      For row = 1 To 16
+        lineStream[column][row] = File.ReadLine(fileName,tileID[column][row])
+        'TextWindow.WriteLine(lineStream[column][row])
+        length[column][row] = Text.GetLength(lineStream[column][row])-4
+        tileStream[column][row] = Text.GetSubText(lineStream[column][row],5,length[column][row])
+        'TextWindow.WriteLine(tileStream[column][row])
+        'GraphicsWindow.DrawText(xpos[column][row],ypos[column][row],tileStream[column][row])
+      EndFor
+    EndFor
+  EndSub
+  
+  Sub clearMap
+  
+    For column = 1 To 16
+      For row = 1 To 16
+        Shapes.Remove(gridShape[column][row])
+        gridName[column][row] = "blank"
+        GraphicsWindow.DrawImage(Image["black blank"],xpos[column][row],ypos[column][row])
+      EndFor
+    EndFor
+    
+  EndSub
+  
+  
+  Sub saveMap
+    'Save Map function starts by loading up all the region,area,locations available and prompting the user which one to save in. It then asks the user for a name for the map.
+    'The program then creates a directory in the specified location file with the name of the map, and an info.txt with the map's info inside
+    
+    For column = 1 To 16
+      For row = 1 To 16
+        'Gets the data from each tile first, writing them on each line of the tileLines[x] array with the three digit number followed by a tab, then the tile name
+        writeNumber = tileID[column][row]
+        If writeNumber < 10 Then
+          writeNumber = Text.Append("00",writeNumber)
+        ElseIf writeNumber < 100 then
+          writeNumber = Text.Append("0",writeNumber)
+        EndIf
+        tileLines[tileID[column][row]] = writeNumber+" "+gridName[column][row]
+        'TextWindow.WriteLine(tileLines[tileID[column][row]])
+      EndFor
+    EndFor
+    'Adds the map name and background type to the end at lines 257 and 258
+    tileLines[257] = "257 "+Map
+    If Text.IsSubText(backgroundTileName,"editing") Then
+      backgroundTypeName = Text.GetSubText(backgroundTileName,1,Text.GetLength(backgroundTileName)-Text.GetLength(" editing blank"))
+    ElseIf Text.IsSubText(backgroundTileName, "blank") then
+      backgroundTypeName = Text.GetSubText(backgroundTileName,1,Text.GetLength(backgroundTileName)-Text.GetLength(" blank"))
+    EndIf
+    tileLines[258] = "258 "+backgroundTypeName
+    
+
+  EndSub
+
+Sub drawMap
+  GraphicsWindow.Title = (Text.GetSubText(File.ReadLine(fileName,257),5,Text.GetLength(File.ReadLine(fileName,257))-4))
+  'Draws the background with grid lines defined by image if in the editing window
+  If currentWindow = "Map Editor" then
+    backgroundTileName = (Text.GetSubText(File.ReadLine(fileName,258),5,Text.GetLength(File.ReadLine(fileName,258))-4))+" editing blank"
+  Else
+    backgroundTileName = (Text.GetSubText(File.ReadLine(fileName,258),5,Text.GetLength(File.ReadLine(fileName,258))-4))+" blank"
+  EndIf
+
+    For column = 1 To 16
+      For row = 1 To 16
+        'Program.Delay(4)
+        'Starts by drawing background image
+        GraphicsWindow.DrawImage(Image[backgroundTileName],xpos[column][row],ypos[column][row])
+        'now draws specified image at this point.
+        gridShape[column][row] = Shapes.AddImage(Image[tileStream[column][row]])
+        gridName[column][row] = tileStream[column][row]
+
+        Shapes.move(gridShape[column][row],xpos[column][row],ypos[column][row])
+        'Shapes.Animate(gridShape[column][row],xpos[column][row],ypos[column][row],200)
+      EndFor
+    EndFor
+    
+  EndSub
+  
+  
+  Sub loadMapFiles
+    loading = "true"
+    Controls.SetTextBoxText(textConsole,"loading...")
+     allRegions = File.GetDirectories(dndLocation+"\World")
+  For RegionFileNumber = 1 to Array.GetItemCount(allRegions)
+    RegionNameLine[RegionFileNumber] = text.GetSubTextToEnd(allRegions[RegionFileNumber],Text.GetLength(dndLocation+"\World")+2)
+
+    'finds then goes into each region file to find all areas inside
+    allAreas = File.GetDirectories(dndLocation+"\World\"+regionNameLine[RegionFileNumber])
+     For areaFileNumber = 1 to Array.GetItemCount(allAreas)
+        areaNameLine[RegionFileNumber][areaFileNumber] = text.GetSubTextToEnd(allAreas[areaFileNumber],Text.GetLength(dndLocation+"\World\"+regionNameLine[RegionFileNumber])+2)
+       
+        'finds then goes into each area file to find all locations inside
+        allLocations = File.GetDirectories(dndLocation+"\World\"+regionNameLine[RegionFileNumber]+"\"+areaNameLine[RegionFileNumber][areaFileNumber])
+         For LocationFileNumber = 1 to Array.GetItemCount(allLocations)
+            LocationNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber] = text.GetSubTextToEnd(allLocations[LocationFileNumber],Text.GetLength(dndLocation+"\World\"+regionNameLine[RegionFileNumber]+"\"+areaNameLine[RegionFileNumber][areaFileNumber])+2)
+
+            'finds then goes into each location file to find all maps inside
+            allMaps[RegionFileNumber][areaFileNumber][LocationFileNumber] = File.GetDirectories(dndLocation+"\World\"+regionNameLine[RegionFileNumber]+"\"+areaNameLine[RegionFileNumber][areaFileNumber]+"\"+LocationNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber])
+            For MapFileNumber = 1 to Array.GetItemCount(allMaps[RegionFileNumber][areaFileNumber][LocationFileNumber])
+              MapNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber][MapFileNumber] = text.GetSubTextToEnd(allMaps[RegionFileNumber][areaFileNumber][LocationFileNumber][MapFileNumber],Text.GetLength(dndLocation+"\World\"+regionNameLine[RegionFileNumber]+"\"+areaNameLine[RegionFileNumber][areaFileNumber]+"\"+LocationNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber])+2)
+              writeRegion = RegionNameLine[RegionFileNumber]
+              writeArea = areaNameLine[RegionFileNumber][areaFileNumber]
+              writeLocation = LocationNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber]
+              writeMap = MapNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber][MapFileNumber]
+              fileName = dndLocation+"\World\"+writeRegion+"\"+writeArea+"\"+writeLocation+"\"+writeMap+"\info.txt"
+              'TextWindow.WriteLine(fileName)
+              For lineNumber = 1 To 265
+                
+                lineStream[lineNumber] = File.ReadLine(fileName,lineNumber)
+                length[lineNumber] = Text.GetLength(lineStream[lineNumber])-4
+                tileStream[lineNumber] = Text.GetSubText(lineStream[lineNumber],5,length[lineNumber])
+                'mapTiles["region name"]["area name"]["location name"]["map name"]["line number"]
+                mapTiles[writeRegion][writeArea][writeLocation][writeMap][linenumber] = tileStream[lineNumber]     
+                'TextWindow.WriteLine(mapTiles[RegionNameLine[RegionFileNumber]][areaNameLine[RegionFileNumber][areaFileNumber]][LocationNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber]][MapNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber][MapFileNumber]][linenumber])
+                
+                'Controls.SetTextBoxText(textConsole,mapTiles[RegionNameLine[RegionFileNumber]][areaNameLine[RegionFileNumber][areaFileNumber]][LocationNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber]][MapNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber][MapFileNumber]][linenumber])  
+              EndFor
+              'TextWindow.WriteLine(mapTiles[writeRegion][writeArea][writeLocation][writeMap][258])
+        endfor
+         endfor
+      endfor
+      
+    endfor
+    Controls.SetTextBoxText(textConsole,"done")
+    loading = "false"
+  EndSub
+  
+  Sub loadSpawnLocation
+'gets the spawn location data from the spawn location filed in the player data
+spawnLocationFile = dndLocation+"\player data\spawn location.txt"
+Region = File.ReadLine(spawnLocationFile,1)
+Area = File.ReadLine(spawnLocationFile,2)
+Location = File.ReadLine(spawnLocationFile,3)
+Map = File.ReadLine(spawnLocationFile,4)
+spawnColumn = File.ReadLine(spawnLocationFile,5)
+spawnRow = File.ReadLine(spawnLocationFile,6)
+EndSub
+
+Sub spawnPlayer
+  playerImageName = "male warlock"
+  playerImage = ImageList.LoadImage(dndLocation + "\Art\"+playerImageName+".png")
+  Player = Shapes.AddImage(playerImage)
+  playerColumn = spawnColumn
+  playerRow = spawnRow
+  movePlayer()
+EndSub
+
+Sub despawnPlayer  
+  Shapes.Remove(Player)
+EndSub
+
+Sub respawnPlayer
+  playerImageName = "male warlock"
+  playerImage = ImageList.LoadImage(dndLocation + "\Art\"+playerImageName+".png")
+  Player = Shapes.AddImage(playerImage)
+  movePlayer()
+EndSub
+
+sub loadAllPortals
+      portalInfoFile = dndLocation+"\Settings\portal info"
+    allPortals = File.GetDirectories(portalInfoFile)
+    numberOfPortals = Array.GetItemCount(allPortals)
+    For xyz = 1 To numberOfPortals
+      portalNumber[xyz] = xyz
+      If portalNumber[xyz] < 10 Then
+          portalNumber[xyz] = Text.Append("000",portalNumber[xyz])
+        ElseIf portalNumber[xyz] < 100 then
+          portalNumber[xyz] = Text.Append("00",portalNumber[xyz])
+        ElseIf portalNumber[xyz] < 1000 then
+          portalNumber[xyz] = Text.Append("0",portalNumber[xyz])
+        EndIf
+      portalFile[xyz] = dndLocation+"\Settings\portal info\"+portalNumber[xyz]+"\info.txt"
+      portalRegion[xyz] = File.ReadLine(portalFile[xyz],1)
+      portalArea[xyz] = File.ReadLine(portalFile[xyz],2)
+      portalLocation[xyz] = File.ReadLine(portalFile[xyz],3)
+      portalMap[xyz] = File.ReadLine(portalFile[xyz],4)
+      portalColumn[xyz] = File.ReadLine(portalFile[xyz],5)
+      portalRow[xyz] = File.ReadLine(portalFile[xyz],6)
+      portalType[xyz] = File.ReadLine(portalFile[xyz],7)
+      portalSendID[xyz] = File.ReadLine(portalFile[xyz],8)
+    EndFor
+  EndSub
+  
+  Sub loadPlayerData
+    loadAllPortals()
+    loadSpawnLocation()
+    gameDataFile = dndLocation+"\player data\game data.txt"
+    gameYear = File.ReadLine(gameDataFile,1)
+    gameMonth = File.ReadLine(gameDataFile,2)
+    gameDay = File.ReadLine(gameDataFile,3)
+    gameHour = File.ReadLine(gameDataFile,4)
+    gameMinute = File.ReadLine(gameDataFile,5)
+    gameSecond = File.ReadLine(gameDataFile,6)
+   Controls.SetTextBoxText(textConsole,"Player Data Loaded!")
+  EndSub
+  
+  Sub savePlayerData
+    gameDataFile = dndLocation+"\player data\game data.txt"
+    File.WriteLine(gameDataFile,1,gameYear)
+    File.WriteLine(gameDataFile,2,gameMonth)
+    File.WriteLine(gameDataFile,3,gameDay)
+    File.WriteLine(gameDataFile,4,gameHour)
+    File.WriteLine(gameDataFile,5,gameMinute)
+    File.WriteLine(gameDataFile,6,gameSecond)
+    spawnLocationFile = dndLocation+"\player data\spawn location.txt"
+    File.WriteLine(spawnLocationFile,1,Region)
+    File.WriteLine(spawnLocationFile,2,Area)
+    File.WriteLine(spawnLocationFile,3,Location)
+    File.WriteLine(spawnLocationFile,4,Map)
+    File.WriteLine(spawnLocationFile,5,playerColumn)
+    File.WriteLine(spawnLocationFile,6,playerRow)
+    Controls.SetTextBoxText(textConsole,"Player Data Saved!")
+  EndSub
+  
+  Sub holdMapData
+    For lineNumber = 1 To 256
+      mapTiles[Region][Area][Location][Map][lineNumber] = gridName[columnID[lineNumber]][rowID[lineNumber]]
+    EndFor
+  EndSub
+  
+  Sub saveAllMaps
+    Controls.SetTextBoxText(textConsole,"saving maps, please wait")
+    loading = "true"
+     allRegions = File.GetDirectories(dndLocation+"\World")
+  For RegionFileNumber = 1 to Array.GetItemCount(allRegions)
+    RegionNameLine[RegionFileNumber] = text.GetSubTextToEnd(allRegions[RegionFileNumber],Text.GetLength(dndLocation+"\World")+2)
+
+    'finds then goes into each region file to find all areas inside
+    allAreas = File.GetDirectories(dndLocation+"\World\"+regionNameLine[RegionFileNumber])
+     For areaFileNumber = 1 to Array.GetItemCount(allAreas)
+        areaNameLine[RegionFileNumber][areaFileNumber] = text.GetSubTextToEnd(allAreas[areaFileNumber],Text.GetLength(dndLocation+"\World\"+regionNameLine[RegionFileNumber])+2)
+       
+        'finds then goes into each area file to find all locations inside
+        allLocations = File.GetDirectories(dndLocation+"\World\"+regionNameLine[RegionFileNumber]+"\"+areaNameLine[RegionFileNumber][areaFileNumber])
+         For LocationFileNumber = 1 to Array.GetItemCount(allLocations)
+            LocationNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber] = text.GetSubTextToEnd(allLocations[LocationFileNumber],Text.GetLength(dndLocation+"\World\"+regionNameLine[RegionFileNumber]+"\"+areaNameLine[RegionFileNumber][areaFileNumber])+2)
+
+            'finds then goes into each location file to find all maps inside
+            allMaps[RegionFileNumber][areaFileNumber][LocationFileNumber] = File.GetDirectories(dndLocation+"\World\"+regionNameLine[RegionFileNumber]+"\"+areaNameLine[RegionFileNumber][areaFileNumber]+"\"+LocationNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber])
+            For MapFileNumber = 1 to Array.GetItemCount(allMaps[RegionFileNumber][areaFileNumber][LocationFileNumber])
+              MapNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber][MapFileNumber] = text.GetSubTextToEnd(allMaps[RegionFileNumber][areaFileNumber][LocationFileNumber][MapFileNumber],Text.GetLength(dndLocation+"\World\"+regionNameLine[RegionFileNumber]+"\"+areaNameLine[RegionFileNumber][areaFileNumber]+"\"+LocationNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber])+2)
+              writeRegion = RegionNameLine[RegionFileNumber]
+              writeArea = areaNameLine[RegionFileNumber][areaFileNumber]
+              writeLocation = LocationNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber]
+              writeMap = MapNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber][MapFileNumber]
+              fileName = dndLocation+"\World\"+writeRegion+"\"+writeArea+"\"+writeLocation+"\"+writeMap+"\info.txt"
+              For lineNumber = 1 to 256
+                'Gets the data from each tile first, writing them on each line of the tileLines[x] array with the three digit number followed by a tab, then the tile name
+                writeNumber = lineNumber
+                If writeNumber < 10 Then
+                  writeNumber = Text.Append("00",writeNumber)
+                ElseIf writeNumber < 100 then
+                  writeNumber = Text.Append("0",writeNumber)
+                EndIf
+                tileLines[lineNumber] = writeNumber+" "+mapTiles[writeRegion][writeArea][writeLocation][writeMap][linenumber]
+                'TextWindow.WriteLine(tileLines[tileID[column][row]])
+              EndFor
+            
+            'Adds the map name and background type to the end at lines 257 and 258
+            tileLines[257] = "257 "+MapNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber][MapFileNumber]
+            TextWindow.WriteLine("saving...")
+            backgroundTypeName = mapTiles[writeRegion][writeArea][writeLocation][writeMap][258]                
+            tileLines[258] = "258" + backgroundTypeName
+            fileName = dndLocation+"\World\"+RegionNameLine[RegionFileNumber]+"\"+areaNameLine[RegionFileNumber][areaFileNumber]+"\"+ LocationNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber]+"\"+MapNameLine[RegionFileNumber][areaFileNumber][LocationFileNumber][MapFileNumber]+"\info.txt"
+            'File.WriteContents(fileName,"")
+            For lineWriteNumber = 1 To Array.GetItemCount(tileLines)
+              File.AppendContents(fileName,tileLines[lineWriteNumber])
+            EndFor
+            Controls.SetTextBoxText(textConsole,"saved "+fileName)
+              
+        endfor
+         endfor
+      endfor
+      
+    endfor
+    loading = "false"
+    Controls.SetTextBoxText(textConsole,"maps saved!")
+    TextWindow.Hide()  
+EndSub
+  
+  
+  
